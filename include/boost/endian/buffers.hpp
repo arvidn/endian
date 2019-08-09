@@ -219,22 +219,24 @@ namespace endian
       bool sign=boost::is_signed<T>::value >
     struct unrolled_byte_loops
     {
-      typedef unrolled_byte_loops<T, n_bytes - 1, sign> next;
+      typedef typename std::make_unsigned<T>::type internal_type;
+      typedef unrolled_byte_loops<internal_type, n_bytes - 1, false> next_load;
+      typedef unrolled_byte_loops<T, n_bytes - 1, sign> next_store;
 
       static T load_big(const unsigned char* bytes) BOOST_NOEXCEPT
-        { return static_cast<T>(*(bytes - 1) | (next::load_big(bytes - 1) << 8)); }
+        { return static_cast<T>(*(bytes - 1) | (next_load::load_big(bytes - 1) << 8)); }
       static T load_little(const unsigned char* bytes) BOOST_NOEXCEPT
-        { return static_cast<T>(*bytes | (next::load_little(bytes + 1) << 8)); }
+        { return static_cast<T>(*bytes | (next_load::load_little(bytes + 1) << 8)); }
 
       static void store_big(char* bytes, T value) BOOST_NOEXCEPT
         {
           *(bytes - 1) = static_cast<char>(value);
-          next::store_big(bytes - 1, static_cast<T>(value >> 8));
+          next_store::store_big(bytes - 1, static_cast<T>(value >> 8));
         }
       static void store_little(char* bytes, T value) BOOST_NOEXCEPT
         {
           *bytes = static_cast<char>(value);
-          next::store_little(bytes + 1, static_cast<T>(value >> 8));
+          next_store::store_little(bytes + 1, static_cast<T>(value >> 8));
         }
     };
 
